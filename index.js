@@ -5,7 +5,8 @@ const CouchMigrations = require('./couch.migrations');
 
 const couchProvider = new CouchProvider();
 exports.couchProvider = couchProvider;
-
+const couchMigrations = new CouchMigrations();
+exports.couchMigrations = couchMigrations;
 
 exports.plugin.register = async function (server, conf) {
 	
@@ -126,7 +127,6 @@ exports.plugin.register = async function (server, conf) {
     }
 
     if(conf.migrations){
-    	var couchMigrations = new CouchMigrations();
     	couchMigrations.setConfiguration(conf);
     	couchMigrations.migrate();
     }

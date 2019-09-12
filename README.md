@@ -2,12 +2,26 @@
 
 Provide methods to interface with couchdb and your server application.
 
-Upload documents, attachments, retrieve, modify and delete functions are provided.
+Upload documents, attachments, retrieve, modify, delete, create database. 
 
 **If you don't want to store attachments in the couchdb server you can provide a 'datapath' in the configuration. 
 The attachments will be store in that location on your server.**
 
 This package is implemented using [bluebird](https://github.com/petkaantonov/bluebird) Promises
+
+Use this package to migrate documents, for example, you would like to add a new field/data to your
+user documents in the DB. 
+
+## Table of Contents
+
+1. [Install](#install)
+2. [Usage](#usage)
+2.1 [Standalone](#standalone)
+2.2 [Hapi plugin](#hapi-plugin)
+3. [Documents migration](#documents-migration)
+
+
+## Installation
 
 ----
 	npm install couch-provider
@@ -15,7 +29,10 @@ This package is implemented using [bluebird](https://github.com/petkaantonov/blu
 
 ## Usage
 
-### Standalone usage, codename is always optional, if not provided it will use the 'default' name in your configuration
+### Standalone 
+
+Codename is always optional, if not provided it will use the 'default' name in your configuration
+
 ----
 	//Multiple db configuration, namespace is optional, you can add multiple namespaces by providing an array
 	var couchdbconfig = {
@@ -44,7 +61,7 @@ This package is implemented using [bluebird](https://github.com/petkaantonov/blu
 
 ---
 
-#### Create the DB 
+#### Create DB 
 ---
 
     return couchProvider.createDB("users1")
@@ -150,7 +167,20 @@ This package is implemented using [bluebird](https://github.com/petkaantonov/blu
 	});
 ---
 
-###This package can be used as an Hapi plugin. 
+#### Get view from db using an object as query (querystring)
+---
+	var obj_query = {
+		key: 'someuserid',
+		include_docs: true
+	}
+
+	couchProvider.getViewQs('_design/user/_view/info', obj_query)
+	.then(function(data){
+		console.log(data);//Array of documents
+	});
+---
+
+### Hapi plugin
 
 ---
 	/*
@@ -166,7 +196,13 @@ This package is implemented using [bluebird](https://github.com/petkaantonov/blu
     plugin.options = couchdbconfig;
 ----
 
-#### How to use couch-provider if used as an Hapi plugin, add a namespace to the configuration
+#### Configuration sample for Hapi
+
+The namespace field is used to create the functions in your Hapi server. 
+Leave blank and the functions will be added under namespace 'couchprovider'
+
+Using the 'Hapi' server object, you can call couchprovider functions from anywhere in your application 
+as 'server.methods.<your namespace or couchprovider>.uploadDocuments(docs)'
 
 ----
 	//Multiple db configuration, namespace is optional, you can add multiple namespaces by providing an array
@@ -205,120 +241,65 @@ This package is implemented using [bluebird](https://github.com/petkaantonov/blu
 ---
 
 
-##### getCouchDBServer(codename)
+### Documents migration
 
-Returns the uri of couchdb ex. 'http://localhost:5984/users1'
+Create your migration document scheme. It must export two functions 'getDocuments' and 'transformDocument'
 
-----
-	//yourserverapp is the namespace in the configuration. The namespace is used to add methods to the server. Check Hapi doc for more //information on server methods https://hapijs.com/tutorials/server-methods
-
-	var uri = server.methods.yourserverapp.getCouchDBServer(codename);
+In this example, we want to add new fields to a 'user' document
+Example: 'migrate_userinfo.js'
 
 ----
+	const qs = require('querystring');
+	const _ = require('underscore');
 
-##### uploadDocuments(docs, codename)
+	module.exports.getDocuments = function(couchProvider){
 
-Add a new document, the parameter docs can be either an array of json objects or a single object
+		var key = {
+			include_docs: true
+		}
 
-----
+		var v = '_design/user/_view/info';
+		v += '?' + qs.stringify(key);
 
-	server.methods.yourserverapp.uploadDocuments(docs)
-	.then(function(res){
-		console.log(res); //result of the couchdb operation
-	});
-
-----
-
-##### getDocument(id, codename)
-
-Get a document from the db given an id
-
-----
-
-	server.methods.yourserverapp.getDocument(id)
-	.then(function(res){
-		console.log(res); //document
-	});
-
-----
-
-##### deleteDocument(doc, codename)
-
-Delete the document from couchdb, the object doc is needed since deletion requires the document id and the revision number. 
-
-----
-
-	server.methods.yourserverapp.deleteDocument(doc)
-	.then(function(res){
-		console.log(res); //result of the operation
-	});
-
-----
-
-##### deleteDocumentAttachment(doc, name, codename)
-
-Delete the document attachment from couchdb or filesystem, the object doc is needed since deletion requires the document id and the revision number. 
-
-----
-
-	server.methods.yourserverapp.deleteDocument(doc)
-	.then(function(res){
-		console.log(res); //result of the operation
-	});
-
-----
-
-##### addDocumentAttachment(doc, name, stream, codename)
-
-Add the attachment to the document or filesystem. The stream parameter must implement 'pipe' method. See 'stream' documentation in node.js[nodejs.org].
-name is a string and it is the name of the attachment
-
-----
-
-	server.methods.yourserverapp.addDocumentAttachment(doc, name, stream)
-	.then(function(res){
-		console.log(res); //result of the operation
-	});
-
-----
-
-##### getDocumentStreamAttachment(doc, name, codename)
-
-Returns the stream of an attachment. Example of a request, reply in Hapi
-----
-	function getAttachment = function(request, reply){
-		
-		var docid = request.params.id;//If your Hapi handler method uses the doc id as parameter
-		var attachmentname = request.params.name;//If the name of the attachment is passed as a parameter
-		
-		server.methods.yourserverapp.getDocument(docid)
-		.then(function(doc){
-			reply(server.methods.yourserverapp.getDocumentStreamAttachment(doc, attachmentname));
-		})
-		.catch(function(e){
-			rep(Boom.wrap(e));
+		return couchProvider.getView(v)
+		.then(function(res){
+			return _.pluck(res, 'doc');
 		});
+	}
+
+	module.exports.transformDocument = function(doc){
+		if(!doc.new_user_field){
+			var transformed = {...doc, 
+				"new_user_field": "new_data"
+			}
+
+			return transformed;
+		}else{
+			console.error("transformed not made", doc);
+			return null;
+		}
 	}
 ----
 
-#####  getDocumentAttachment(doc, name, codename)
+#### Setting up a migration
 
-Get the attachment data
-
-----
-	server.methods.yourserverapp.getDocumentAttachment(doc, attachmentname)
-	.then(function(data){
-		console.log(data);//This is a buffer
-	});
-----
-
-##### getView(view, codename)
-
-The view parameter is the path to the couchdb view ex. '_design/user/_view/info'. 
+If using as a Hapi plugin, you can also add the 'migrations' field in your configuration. 
+When the server starts, the migration will be executed. 
 
 ----
-	server.methods.yourserverapp.getView('_design/user/_view/info')
-	.then(function(data){
-		console.log(data);
-	});
+	const conf = {
+		"default" : "somedb",
+		"somedb" : {
+			"hostname": "http://localhost:5984",
+			"database": "mydb"
+		},
+		"migrations": [
+			"/path/to/migrate_userinfo.js"
+		]
+	}
+
+	const {CouchMigrations} = require('couch-provider');
+	const couchMigrations = new CouchMigrations();
+	couchMigrations.setConfiguration(conf);
+	couchMigrations.migrate();
 ----
