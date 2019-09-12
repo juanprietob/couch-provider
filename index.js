@@ -1,7 +1,11 @@
 exports.plugin = {};
 
-const couchProvider = require('./couch.provider');
+const CouchProvider = require('./couch.provider');
+const CouchMigrations = require('./couch.migrations');
+
+const couchProvider = new CouchProvider();
 exports.couchProvider = couchProvider;
+
 
 exports.plugin.register = async function (server, conf) {
 	
@@ -16,73 +20,97 @@ exports.plugin.register = async function (server, conf) {
     	server.method({
 		    name: namespace + '.getCouchDBServer',
 		    method: couchProvider.getCouchDBServer,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.uploadDocuments',
 		    method: couchProvider.uploadDocuments,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.getDocument',
 		    method: couchProvider.getDocument,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.deleteDocument',
 		    method: couchProvider.deleteDocument,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.addDocumentAttachment',
 		    method: couchProvider.addDocumentAttachment,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.getDocumentStreamAttachment',
 		    method: couchProvider.getDocumentStreamAttachment,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.getDocumentStreamAttachmentUri',
 		    method: couchProvider.getDocumentStreamAttachmentUri,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.getDocumentAttachment',
 		    method: couchProvider.getDocumentAttachment,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.getView',
 		    method: couchProvider.getView,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.getViewQs',
 		    method: couchProvider.getViewQs,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.mkdirp',
 		    method: couchProvider.mkdirp,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		server.method({
 		    name: namespace + '.removeDirectorySync',
 		    method: couchProvider.removeDirectorySync,
-		    options: {}
+		    options: {
+		    	bind: couchProvider
+		    }
 		});
 
 		console.info('couch-provider namespace', namespace, 'initialized.');
@@ -95,6 +123,12 @@ exports.plugin.register = async function (server, conf) {
     	});
     }else{
     	addNameSpace(namespace);
+    }
+
+    if(conf.migrations){
+    	var couchMigrations = new CouchMigrations();
+    	couchMigrations.setConfiguration(conf);
+    	couchMigrations.migrate();
     }
 }
 

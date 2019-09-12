@@ -8,7 +8,8 @@ var _ = require('underscore');
 const Joi = require('@hapi/joi');
 const Lab = require('lab');
 const lab = exports.lab = Lab.script();
-const couchProvider = require("./couch.provider");
+const CouchProvider = require("./couch.provider");
+const couchProvider = new CouchProvider();
 
 var confexample = {
     "default": "testdb",

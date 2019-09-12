@@ -37,7 +37,7 @@ This package is implemented using [bluebird](https://github.com/petkaantonov/blu
 	//	"database": "users1"
 	//}
 
-	var couchProvider = require('couch-provider').couchProvider;
+	const {couchProvider} = require('couch-provider');
 	couchProvider.setConfiguration(confexample);
 
 	var url = couchProvider.getCouchDBServer(codename);
