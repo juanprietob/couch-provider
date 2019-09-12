@@ -26,20 +26,25 @@ exports.setConfiguration = function(conf){
 
 exports.createDB = function(codename){
 
-	var url = exports.getCouchDBServer(codename);
-
     return new Promise(function(resolve, reject){
-        request.put(url, function(err, res, body){
+
+    	var options = {
+    		uri: exports.getCouchDBServer(codename),
+            method: 'PUT', 
+            json : true
+    	}
+
+        request(options, function(err, res, body){
             if(err){
                 reject(err.message);
             }else{
                 try{
-                    if(JSON.parse(body).error === "not_found"){
-                        request.put(url, function(err, res, body){
-                            resolve(JSON.parse(body));
+                    if(body.error === "not_found"){
+                        request(options, function(err, res, body){
+                            resolve(body);
                         });
                     }else{
-                        resolve(JSON.parse(body));
+                        resolve(body);
                     }
                 }catch(e){
                     console.error(url);
@@ -110,17 +115,17 @@ exports.getDocument = function(id, codename){
 	return new Promise(function(resolve, reject){
 		try{
 			var options = {
-				uri: exports.getCouchDBServer(codename) + "/" + id
+				uri: exports.getCouchDBServer(codename) + "/" + id,
+				json: true
 			}
 			request(options, function(err, res, body){
 				if(err){
 					reject(err);
 				}else{
-					var doc = JSON.parse(body);
-					if(doc.error){
-						reject(doc.error);
+					if(body.error){
+						reject(body.error);
 					}else{
-						resolve(doc);
+						resolve(body);
 					}
 				}
 			});
@@ -183,17 +188,17 @@ exports.deleteDocument = function(doc, codename){
 				method: 'DELETE',
 				qs: {
 					rev: doc._rev
-				}
+				},
+				json: true
 			}				
 			request(options, function(err, res, body){
 				if(err){
 					reject(err);
 				}else{
-					var doc = JSON.parse(body);
-					if(doc.error){
-						reject(doc);
+					if(body.error){
+						reject(body);
 					}else{
-						resolve(doc);
+						resolve(body);
 					}
 				}
 			});
@@ -227,7 +232,7 @@ exports.deleteAttachment = function(doc, name, codename){
 				delete doc.attachments[name];
 				exports.uploadDocuments(doc, codename)
 				.then(function(res){
-					resolve(res);
+					resolve(res[0]);
 				});
 			}catch(e){
 				reject(e);
@@ -240,17 +245,17 @@ exports.deleteAttachment = function(doc, name, codename){
 					method: 'DELETE',
 					qs: {
 						rev: doc._rev
-					}
+					},
+					json: true
 				}				
 				request(options, function(err, res, body){
 					if(err){
 						reject(err);
 					}else{
-						var doc = JSON.parse(body);
-						if(doc.error){
-							reject(doc);
+						if(body.error){
+							reject(body);
 						}else{
-							resolve(doc);
+							resolve(body);
 						}
 					}
 				});
@@ -259,7 +264,9 @@ exports.deleteAttachment = function(doc, name, codename){
 				reject(e);
 			}
 		}else{
-			throw "Attachement not found";
+			throw {
+				error: "Attachement not found"
+			}
 		}
 	});
 }
@@ -311,7 +318,8 @@ exports.addDocumentAttachment = function(doc, name, stream, codename){
 					},
 					qs: {
 						rev: doc._rev
-					}
+					},
+					json: true
 				}
 				stream.pipe(request(options, function(err, res, body){
 					if(err){
@@ -378,15 +386,15 @@ exports.getView = function(view, codename){
 	return new Promise(function(resolve, reject){
 		try{
 			var options = {
-				uri: exports.getCouchDBServer(codename) + "/" + view
+				uri: exports.getCouchDBServer(codename) + "/" + view,
+				json: true
 			}
 
 			request(options, function(err, res, body){					
 				if(err){						
 					reject(err);
 				}else{
-					var docs = JSON.parse(body);
-					resolve(docs.rows);
+					resolve(body.rows);
 				}					
 			});
 		}catch(e){
@@ -400,15 +408,15 @@ exports.getViewQs = function(view, query, codename){
 		try{
 			var options = {
 				uri: exports.getCouchDBServer(codename) + "/" + view,
-				qs: query
+				qs: query,
+				json: true
 			}
 
 			request(options, function(err, res, body){					
 				if(err){						
 					reject(err);
 				}else{
-					var docs = JSON.parse(body);
-					resolve(docs.rows);
+					resolve(body.rows);
 				}					
 			});
 		}catch(e){

@@ -74,6 +74,13 @@ lab.experiment("Test couch-provider", function(){
 
             return couchProvider.uploadDocuments(doc, codename)
             .then(function(res){
+                
+                Joi.assert(res, Joi.array().items(Joi.object().keys({
+                    id: Joi.string(),
+                    rev: Joi.string(),
+                    ok: Joi.boolean()
+                })));
+
                 docids = _.pluck(res, "id");
             });
         });
@@ -83,8 +90,12 @@ lab.experiment("Test couch-provider", function(){
             return Promise.map(docids, function(docid){
                 return couchProvider.getDocument(docid, codename);
             })
-            .then(function(doc){
-                console.log(doc);
+            .then(function(docs){
+                Joi.assert(docs, Joi.array().items(Joi.object().keys({
+                    _id: Joi.string(),
+                    _rev: Joi.string(),
+                    some_data: Joi.string()
+                })));
             });
         });
         
@@ -99,6 +110,13 @@ lab.experiment("Test couch-provider", function(){
                 .then(function(doc){
                     return couchProvider.addDocumentAttachment(doc, path.join("testname", path.basename(filename)), stream, codename);
                 });
+            })
+            .then(function(res){
+                Joi.assert(res, Joi.array().items(Joi.object().keys({
+                    id: Joi.string(),
+                    rev: Joi.string(),
+                    ok: Joi.boolean()
+                })));
             });
         
         });
@@ -112,6 +130,13 @@ lab.experiment("Test couch-provider", function(){
                 .then(function(doc){
                     return couchProvider.addDocumentAttachment(doc, path.join("testname", path.basename(filename) + "_2"), stream, codename);
                 });
+            })
+            .then(function(res){
+                Joi.assert(res, Joi.array().items(Joi.object().keys({
+                    id: Joi.string(),
+                    rev: Joi.string(),
+                    ok: Joi.boolean()
+                })));
             });
         
         });
@@ -139,10 +164,14 @@ lab.experiment("Test couch-provider", function(){
                 return couchProvider.getDocument(docid, codename)
                 .then(function(doc){
                     return couchProvider.deleteAttachment(doc, "testname/README.md", codename);
-                })
-                .then(function(res){
-                    console.log(res);
                 });
+            })
+            .then(function(res){
+                Joi.assert(res, Joi.array().items(Joi.object().keys({
+                    id: Joi.string(),
+                    rev: Joi.string(),
+                    ok: Joi.boolean()
+                })));
             });
         });
 
@@ -152,10 +181,12 @@ lab.experiment("Test couch-provider", function(){
                 return couchProvider.getDocument(docid, codename)
                 .then(function(doc){
                     return couchProvider.deleteAttachment(doc, "testname/README.md", codename);
-                })
-                .catch(function(res){
-                    console.log(res);
                 });
+            })
+            .catch(function(res){
+                Joi.assert(res, Joi.object().keys({
+                    error: Joi.string()
+                }));
             });
         });
 
@@ -165,10 +196,14 @@ lab.experiment("Test couch-provider", function(){
                 return couchProvider.getDocument(docid, codename)
                 .then(function(doc){
                     return couchProvider.deleteAttachment(doc, "testname/README.md_2", codename);
-                })
-                .then(function(res){
-                    console.log(res);
                 });
+            })
+            .then(function(res){
+                Joi.assert(res, Joi.array().items(Joi.object().keys({
+                    id: Joi.string(),
+                    rev: Joi.string(),
+                    ok: Joi.boolean()
+                })));
             });
         });
 
@@ -181,6 +216,13 @@ lab.experiment("Test couch-provider", function(){
                 .then(function(doc){
                     return couchProvider.addDocumentAttachment(doc, path.join("deletedoctest", path.basename(filename)), stream, codename);
                 });
+            })
+            .then(function(res){
+                Joi.assert(res, Joi.array().items(Joi.object().keys({
+                    id: Joi.string(),
+                    rev: Joi.string(),
+                    ok: Joi.boolean()
+                })));
             });
         
         });
@@ -190,10 +232,14 @@ lab.experiment("Test couch-provider", function(){
                 return couchProvider.getDocument(docid, codename)
                 .then(function(doc){
                     return couchProvider.deleteDocument(doc, codename);
-                })
-                .then(function(res){
-                    console.log("Document deleted", res);
                 });
+            })
+            .then(function(res){
+                 Joi.assert(res, Joi.array().items(Joi.object().keys({
+                    id: Joi.string(),
+                    rev: Joi.string(),
+                    ok: Joi.boolean()
+                })));
             });
         });
     }
