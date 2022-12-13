@@ -16,12 +16,13 @@ user documents in the DB.
 
 1. [Install](#install)
 2. [Usage](#usage)
-2.1 [Standalone](#standalone)
-2.2 [Hapi plugin](#hapi-plugin)
-3. [Documents migration](#documents-migration)
-
+    1. [Standalone](#standalone)
+    2. [Hapi plugin](#hapi-plugin)
+4. [Documents migration](#documents-migration)
 
 ## Installation
+
+Install couchdb by folling instructions [here](https://couchdb.apache.org/)
 
 ----
 	npm install couch-provider
